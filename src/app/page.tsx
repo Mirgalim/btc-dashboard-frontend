@@ -1,103 +1,148 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import { getDashboardData } from "@/lib/api";
+import MetricCard from "@/components/MetricCard";
+import ChartContainer from "@/components/ChartContainer";
+import InsightBlock from "@/components/InsightBlock";
+import Loading from "@/components/Loading";
+import RangeSelector from "@/components/RangeSelector";
+
+// 📊 Шинэ Chart component-ууд
+import MAChart from "@/chart/MAChart";
+import RSIChart from "@/chart/RSIChart";
+import MACDChart from "@/chart/MACDChart";
+import VolumeChart from "@/chart/VolumeChart";
+import BollingerChart from "@/chart/BollingerChart";
+import MVRVChart from "@/chart/MVRVChart";
+import MacroStats from "@/chart/MacroStats";
+
+import type { DashboardData, Metric } from "@/types/dashboard";
+import PriceHistoryTable from "@/components/PriceHistoryTable";
+import ProChart from "@/chart/ProChart";
+
+export default function DashboardPage() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [activeRange, setActiveRange] = useState(90);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData(activeRange);
+  }, [activeRange]);
+
+  const buildMetricsFromSummary = (
+    summary: DashboardData["summary"]
+  ): Metric[] => {
+    return [
+      {
+        key: "current",
+        label: "Bitcoin Current Price",
+        value: summary.current_price,
+        format: "currency",
+      },
+      {
+        key: "max",
+        label: "Max Price",
+        value: summary.max,
+        format: "currency",
+      },
+      {
+        key: "min",
+        label: "Min Price",
+        value: summary.min,
+        format: "currency",
+      },
+      {
+        key: "average",
+        label: "Average Price",
+        value: summary.average,
+        format: "currency",
+      },
+      {
+        key: "median",
+        label: "Median",
+        value: summary.median,
+        format: "currency",
+      },
+      {
+        key: "volatility",
+        label: "Volatility",
+        value: summary.volatility,
+        format: "number",
+      },
+    ];
+  };
+
+  const fetchData = async (days: number) => {
+    setLoading(true);
+    try {
+      const res = await getDashboardData(days);
+      const metrics = buildMetricsFromSummary(res.summary);
+      setData({ ...res, metrics });
+    } catch (err) {
+      console.error("Failed to load dashboard data", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading || !data) return <Loading />;
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="p-6 space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        Bitcoin Analytics Dashboard
+      </h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      <RangeSelector
+        active={activeRange}
+        onSelect={(days) => setActiveRange(days)}
+      />
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {data.metrics.map((metric, i) => (
+          <MetricCard key={i} metric={metric} />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-3 ">
+          <ProChart
+            data={data.chart}
+            volumeData={data.volume.values.map((v) => ({
+              label: v.timestamp,
+              value: v.volume,
+            }))}
+            smaData={data.ma.values.map((d) => ({
+              label: d.timestamp,
+              value: d.SMA,
+            }))}
+            emaData={data.ma.values.map((d) => ({
+              label: d.timestamp,
+              value: d.EMA,
+            }))}
+            currentPrice={data.summary.current_price}
+            supportLevels={[30000, 35000]}
+            resistanceLevels={[40000, 42000]}
+          />
+          {/* <ChartContainer data={data.chart} /> */}
+          <MacroStats data={data.macro} />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <div className="lg:col-span-1">
+          <InsightBlock text={data.insight} />
+          <PriceHistoryTable data={data.price_history} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <MAChart data={data.ma.values} />
+        <RSIChart data={data.rsi.values} />
+        <MACDChart data={data.macd.values} />
+        <VolumeChart data={data.volume.values} />
+        <BollingerChart data={data.bollinger.values} />
+        <MVRVChart data={data.mvrv.values} />
+      </div>
     </div>
   );
 }
