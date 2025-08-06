@@ -2,6 +2,7 @@
 
 import {
   Chart as ChartJS,
+  LineController,
   LineElement,
   PointElement,
   BarElement,
@@ -17,6 +18,21 @@ import { Chart } from "react-chartjs-2";
 import "chartjs-adapter-date-fns";
 import { useEffect, useState, useRef } from "react";
 import { ChartData as PriceData } from "@/types/dashboard";
+
+// ✅ ChartJS plugins-ийг render-ээс гадуур нэг удаа бүртгэх
+ChartJS.register(
+  LineController,
+  LineElement,
+  PointElement,
+  BarElement,
+  LinearScale,
+  TimeScale,
+  Tooltip,
+  Legend,
+  Filler,
+  CategoryScale,
+  annotationPlugin
+);
 
 type Props = {
   data: PriceData[];
@@ -40,29 +56,7 @@ export default function ProChart({
   const chartRef = useRef<any>(null);
   const [livePrice, setLivePrice] = useState<number | null>(currentPrice || null);
 
-  useEffect(() => {
-    if (!data || data.length === 0) return;
-  
-    (async () => {
-      if (typeof window !== "undefined") {
-        const zoomPlugin = (await import("chartjs-plugin-zoom")).default;
-        ChartJS.register(zoomPlugin);
-      }
-    })();
-  }, [data]);
-
-  ChartJS.register(
-    LineElement,
-    PointElement,
-    BarElement,
-    LinearScale,
-    TimeScale,
-    Tooltip,
-    Legend,
-    Filler,
-    CategoryScale,
-    annotationPlugin
-  );
+  if (!data || data.length === 0) return null;
 
   // 📡 Real-time price (Binance WebSocket)
   useEffect(() => {
@@ -83,15 +77,7 @@ export default function ProChart({
         type: "line",
         label: "BTC Price",
         data: data.map((d) => d.value),
-        borderColor: (ctx: any) => {
-          const chart = ctx.chart;
-          const { ctx: canvasCtx, chartArea } = chart;
-          if (!chartArea) return "#facc15";
-          const gradient = canvasCtx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-          gradient.addColorStop(0, "rgba(34,197,94,1)"); // Green
-          gradient.addColorStop(1, "rgba(239,68,68,1)"); // Red
-          return gradient;
-        },
+        borderColor: "#facc15",
         backgroundColor: "rgba(250,204,21,0.1)",
         borderWidth: 2,
         fill: true,
@@ -133,24 +119,6 @@ export default function ProChart({
     interaction: { mode: "index", intersect: false },
     plugins: {
       legend: { labels: { color: "#9ca3af" } },
-      tooltip: {
-        backgroundColor: "#111",
-        titleColor: "#facc15",
-        bodyColor: "#fff",
-        callbacks: {
-          title: (items: any) => `Time: ${items[0].label}`,
-          label: (ctx: any) => {
-            if (ctx.dataset.type === "bar") {
-              return `Volume: ${ctx.parsed.y.toLocaleString()}`;
-            }
-            return `${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString()}`;
-          },
-        },
-      },
-      zoom: {
-        pan: { enabled: true, mode: "x", modifierKey: "shift" },
-        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: "x" },
-      },
       annotation: {
         annotations: {
           ...(livePrice && {
@@ -170,43 +138,16 @@ export default function ProChart({
               },
             },
           }),
-          ...supportLevels.reduce((acc, lvl, i) => ({
-            ...acc,
-            [`support-${i}`]: {
-              type: "line",
-              yMin: lvl,
-              yMax: lvl,
-              borderColor: "#10b981",
-              borderWidth: 1,
-              borderDash: [4, 4],
-              label: { enabled: true, content: `Support ${i + 1}`, position: "start" },
-            },
-          }), {}),
-          ...resistanceLevels.reduce((acc, lvl, i) => ({
-            ...acc,
-            [`resistance-${i}`]: {
-              type: "line",
-              yMin: lvl,
-              yMax: lvl,
-              borderColor: "#ef4444",
-              borderWidth: 1,
-              borderDash: [4, 4],
-              label: { enabled: true, content: `Resistance ${i + 1}`, position: "start" },
-            },
-          }), {}),
         },
       },
     },
     scales: {
       x: {
         type: "time",
-        time: { tooltipFormat: "MMM dd HH:mm", displayFormats: { minute: "HH:mm", hour: "HH:mm", day: "yyyy-MM-dd" } },
         ticks: { color: "#9ca3af" },
-        grid: { color: "rgba(255,255,255,0.05)" },
       },
       y: {
         ticks: { color: "#9ca3af", callback: (v: number) => `$${v.toLocaleString()}` },
-        grid: { color: "rgba(255,255,255,0.05)" },
       },
       yVolume: { position: "right", ticks: { color: "#9ca3af" }, grid: { drawOnChartArea: false } },
     },
