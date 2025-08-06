@@ -40,17 +40,16 @@ export default function ProChart({
   const chartRef = useRef<any>(null);
   const [livePrice, setLivePrice] = useState<number | null>(currentPrice || null);
 
-  if (!data || data.length === 0) return null;
-
-  // 📌 Register plugins (zoom only client-side)
   useEffect(() => {
+    if (!data || data.length === 0) return;
+  
     (async () => {
       if (typeof window !== "undefined") {
         const zoomPlugin = (await import("chartjs-plugin-zoom")).default;
         ChartJS.register(zoomPlugin);
       }
     })();
-  }, []);
+  }, [data]);
 
   ChartJS.register(
     LineElement,
