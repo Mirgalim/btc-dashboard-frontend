@@ -6,6 +6,7 @@ import {
   LineElement,
   PointElement,
   BarElement,
+  BarController,
   LinearScale,
   TimeScale,
   Tooltip,
@@ -22,6 +23,7 @@ import { ChartData as PriceData } from "@/types/dashboard";
 // ✅ ChartJS plugins-ийг render-ээс гадуур нэг удаа бүртгэх
 ChartJS.register(
   LineController,
+  BarController,
   LineElement,
   PointElement,
   BarElement,
