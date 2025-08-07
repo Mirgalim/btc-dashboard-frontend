@@ -1,11 +1,10 @@
-"use client";
-
-import React from "react";
+import { ArrowDown, ArrowUp, Minus } from "lucide-react";
 
 type NewsItem = {
   title: string;
   url: string;
   description: string;
+  sentiment?: "positive" | "negative" | "neutral";
 };
 
 type Props = {
@@ -14,6 +13,14 @@ type Props = {
 };
 
 const InsightBlock: React.FC<Props> = ({ insight, news }) => {
+  const getSentimentIcon = (sentiment?: string) => {
+    if (sentiment === "positive")
+      return <ArrowUp className="text-green-500 inline-block w-4 h-4 ml-2" />;
+    if (sentiment === "negative")
+      return <ArrowDown className="text-red-500 inline-block w-4 h-4 ml-2" />;
+    return <Minus className="text-gray-400 inline-block w-4 h-4 ml-2" />;
+  };
+
   return (
     <div className="bg-white dark:bg-[#1f2937] rounded-3xl p-6 space-y-6 shadow-md">
       {/* 🔹 AI Insight */}
@@ -37,8 +44,11 @@ const InsightBlock: React.FC<Props> = ({ insight, news }) => {
                 className="text-blue-600 dark:text-blue-400 font-medium hover:underline"
               >
                 {item.title}
+                {getSentimentIcon(item.sentiment)}
               </a>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">{item.description}</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+                {item.description}
+              </p>
             </li>
           ))}
         </ul>
@@ -47,4 +57,4 @@ const InsightBlock: React.FC<Props> = ({ insight, news }) => {
   );
 };
 
-export default InsightBlock;
+export default InsightBlock
