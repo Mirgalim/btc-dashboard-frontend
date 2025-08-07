@@ -128,9 +128,13 @@ export default function DashboardPage() {
           {/* <ChartContainer data={data.chart} /> */}
         </div>
 
-        <div className="lg:col-span-1 flex flex-col justify-between items-start gap-6">
-          <MacroStats data={data.macro} />
-          <PriceHistoryTable data={data.price_history} />
+        <div className="lg:col-span-1 flex flex-col gap-6 h-full">
+          <div className="flex-1 w-full h-full">
+            <MacroStats data={data.macro} />
+          </div>
+          <div className="flex-1 w-full h-full">
+            <PriceHistoryTable data={data.price_history} />
+          </div>
         </div>
       </div>
       <InsightBlock insight={data.insight} news={data.news} />
