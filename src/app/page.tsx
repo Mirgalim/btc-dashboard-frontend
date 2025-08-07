@@ -126,14 +126,14 @@ export default function DashboardPage() {
             resistanceLevels={[40000, 42000]}
           />
           {/* <ChartContainer data={data.chart} /> */}
-          <MacroStats data={data.macro} />
         </div>
 
         <div className="lg:col-span-1">
-          <InsightBlock text={data.insight} />
+          <MacroStats data={data.macro} />
           <PriceHistoryTable data={data.price_history} />
         </div>
       </div>
+      <InsightBlock insight={data.insight} news={data.news} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <MAChart data={data.ma.values} />

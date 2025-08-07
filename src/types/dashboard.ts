@@ -54,6 +54,13 @@ export type Metric = {
     amountChange: number;
     percentChange: number;
   };
+
+  export type NewsItem = {
+    title: string;
+    url: string;
+    description: string;
+  };
+
   export type DashboardData = {
     summary: {
       max: number;
@@ -66,6 +73,7 @@ export type Metric = {
     metrics: Metric[];
     chart: ChartData[];
     insight: string;
+    news: NewsItem[];
     price: ChartData[];
     price_history: PriceHistoryRow[];
     ma: { values: MAValue[] };
